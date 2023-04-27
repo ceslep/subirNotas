@@ -126,6 +126,7 @@
   };
 
   const changeGrado = async (): Promise<void> => {
+    _estudiantes=[];
     _estudiantes = await getEstudiantes();
   };
 </script>
