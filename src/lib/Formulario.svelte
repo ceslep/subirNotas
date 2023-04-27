@@ -1,6 +1,80 @@
 <script lang="ts">
+  import { onMount } from "svelte";
+  import { _URL } from "./../Stores.js";
+  import axios from "axios";
+
+  let sedes: asignaciones = [];
+  let _grados: grados = [];
+  let _estudiantes: estudiantes = [];
+  let _periodos: periodos = [];
+
+  onMount(async (): Promise<void> => {
+    sedes = await getAsignaciones();
+    _periodos = await getPeriodos();
+  });
+
+  type asignaciones = objetoAsignaciones[];
+  type grados = objetoGrados[];
+  type estudiantes = objetoEstudiantes[];
+  type periodos = objetoPeriodos[];
+
+  interface objetoAsignaciones {
+    ind: string;
+    sede: string;
+  }
+  interface objetoGrados {
+    nivel: string;
+    numero: string;
+    grado: string;
+  }
+
+  interface objetoEstudiantes {
+    estudiante: string;
+    nombres: string;
+  }
+
+  interface objetoPeriodos {
+    nombre: string;
+  }
+
+  const getPeriodos = async (): Promise<periodos> => {
+    const { data } = await axios.get(`${$_URL}getPeriodos.php`);
+    const _periodos = data
+      .filter((d: any) => d.periodo !== "CINCO" && d.periodo !== "MINIMAS")
+      .map((item: any) => {
+        return {
+          nombre: item.periodo,
+        };
+      });
+    return _periodos;
+  };
+  const getAsignaciones = async (): Promise<asignaciones> => {
+    const { data }: any = await axios.post(`${$_URL}getasignacion.php`);
+    const _asignaciones: asignaciones = data.map((item: objetoAsignaciones) => {
+      return {
+        ind: item.ind,
+        sede: item.sede,
+      };
+    });
+    return _asignaciones;
+  };
+
+  const getGrados = async (): Promise<grados> => {
+    const { data }: any = await axios.post(`${$_URL}generaGrupos.php`, {
+      sede: formData.sede,
+    });
+    const _grados: grados = data.map((item: objetoGrados) => {
+      return {
+        nivel: item.nivel,
+        numero: item.numero,
+        grado: item.grado,
+      };
+    });
+    return _grados;
+  };
 
   interface FormData {
+    sede: string;
     estudiante: string;
     docente: string;
     asignatura: string;
@@ -11,6 +85,7 @@
   }
 
   const formData: FormData = {
+    sede: "",
     estudiante: "",
     docente: "",
     asignatura: "",
@@ -23,74 +98,95 @@
   function handleSubmit() {
     // Lógica para manejar el envío del formulario
   }
+
+  const changeSede = async (): Promise<void> => {
+    _grados = await getGrados();
+  };
+
+  const getEstudiantes = async (): Promise<estudiantes> => {
+    const { nivel, numero } =
+      _grados[
+        _grados.findIndex((g: objetoGrados) => g.grado === formData.grado)
+      ];
+    const { data }: any = await axios.post(`${$_URL}getEstudiantes.php`, {
+      asignacion: formData.sede,
+      sede: "",
+      nivel,
+      numero,
+      year: new Date().getFullYear(),
+      periodo: "",
+    });
+    const _estudiantes: estudiantes = data.map((item: objetoEstudiantes) => {
+      return {
+        estudiante: item.estudiante,
+        nombres: item.nombres,
+      };
+    });
+    return _estudiantes;
+  };
+
+  const changeGrado = async (): Promise<void> => {
+    _estudiantes = await getEstudiantes();
+  };
 </script>
+
 <main class="container">
-<form class="row g-3" on:submit|preventDefault={handleSubmit}>
-  <input type="hidden" name="currentYear" value={formData.year} />
-  <!-- Campo oculto con el año actual -->
-  <div class="col-md-6">
-    <label for="grado" class="form-label">Grado:</label>
-    <input
-      type="text"
-      id="grado"
-      class="form-control"
-      bind:value={formData.grado}
-    />
-  </div>
-  <div class="col-md-6">
-    <label for="estudiante" class="form-label">Estudiante:</label>
-    <input
-      type="text"
-      id="estudiante"
-      class="form-control"
-      bind:value={formData.estudiante}
-    />
-  </div>
+  <form class="row g-3" on:submit|preventDefault={handleSubmit}>
+    <input type="hidden" name="currentYear" value={formData.year} />
+    <!-- Campo oculto con el año actual -->
+    <div class="col-md-6">
+      <label for="sede" class="form-label">Sede:</label>
+      <select
+        id="sede"
+        class="form-select"
+        bind:value={formData.sede}
+        on:change={changeSede}
+      >
+        {#each sedes as sede}
+          <option value={sede.ind}>{sede.sede}</option>
+        {/each}
+      </select>
+    </div>
+    <div class="col-md-6">
+      <label for="grado" class="form-label">Grado:</label>
+      <select
+        id="grado"
+        class="form-select"
+        bind:value={formData.grado}
+        on:change={changeGrado}
+      >
+        <option value="" />
+        {#each _grados as grado}
+          <option value={grado.grado}>{grado.grado}</option>
+        {/each}
+      </select>
+    </div>
+    <div class="col-md-6">
+      <label for="estudiante" class="form-label">Estudiante:</label>
+      <select
+        id="estudiante"
+        class="form-select"
+        bind:value={formData.estudiante}
+      >
+        <option value="" />
+        {#each _estudiantes as estudiante}
+          <option value={estudiante.estudiante}>{estudiante.nombres}</option>
+        {/each}
+      </select>
+    </div>
 
-  <div class="col-md-6">
-    <label for="docente" class="form-label">Docente:</label>
-    <input
-      type="text"
-      id="docente"
-      class="form-control"
-      bind:value={formData.docente}
-    />
-  </div>
+    <div class="col-md-6">
+      <label for="periodo" class="form-label">Periodo:</label>
+      <select id="periodo" class="form-select" bind:value={formData.periodo}>
+        <option value="" />
+        {#each _periodos as periodo}
+          <option value={periodo.nombre}>{periodo.nombre}</option>
+        {/each}
+      </select>
+    </div>
 
-  <div class="col-md-6">
-    <label for="asignatura" class="form-label">Asignatura:</label>
-    <input
-      type="text"
-      id="asignatura"
-      class="form-control"
-      bind:value={formData.asignatura}
-    />
-  </div>
-
-  
-
-  <div class="col-md-6">
-    <label for="periodo" class="form-label">Periodo:</label>
-    <input
-      type="text"
-      id="periodo"
-      class="form-control"
-      bind:value={formData.periodo}
-    />
-  </div>
-
-  <div class="col-md-6">
-    <label for="valoracion" class="form-label">Valoración:</label>
-    <input
-      type="text"
-      id="valoracion"
-      class="form-control"
-      bind:value={formData.valoracion}
-    />
-  </div>
-
-  <div class="col-12">
-    <button type="submit" class="btn btn-primary">Enviar</button>
-  </div>
-</form>
+    <div class="col-12">
+      <button type="submit" class="btn btn-primary">Enviar</button>
+    </div>
+  </form>
 </main>
