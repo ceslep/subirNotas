@@ -7,6 +7,7 @@
   let _grados: grados = [];
   let _estudiantes: estudiantes = [];
   let _periodos: periodos = [];
+  let _asignaturas:asignaturas=[];
 
   onMount(async (): Promise<void> => {
     sedes = await getAsignaciones();
@@ -17,6 +18,7 @@
   type grados = objetoGrados[];
   type estudiantes = objetoEstudiantes[];
   type periodos = objetoPeriodos[];
+  type asignaturas = objetoAsignaturas[];
 
   interface objetoAsignaciones {
     ind: string;
@@ -84,6 +86,12 @@
     year: string;
   }
 
+  interface objetoAsignaturas {
+      docente:string,
+      asignatura:string,
+      nombres:string
+  }
+
   const formData: FormData = {
     sede: "",
     estudiante: "",
@@ -126,8 +134,28 @@
   };
 
   const changeGrado = async (): Promise<void> => {
-    _estudiantes=[];
+    _estudiantes = [];
     _estudiantes = await getEstudiantes();
+  };
+
+
+  const getAsignaturas = async():Promise<asignaturas>=>{
+
+    const _asignaturas:asignaturas=data.map((item: objetoEstudiantes) => {
+      return {
+        estudiante: item.estudiante,
+        nombres: item.nombres,
+      };;
+    return _asignaturas;
+
+  }
+  const changePeriodo = async (): Promise<void> => {
+    const {data}:any = await axios.post(`${$_URL}getNotasSubir.php`,{
+      sede:formData.sede,
+      grado:formData.grado,
+      periodo:formData.periodo
+    })
+    console.log({data});
   };
 </script>
 
@@ -178,7 +206,12 @@
 
     <div class="col-md-6">
       <label for="periodo" class="form-label">Periodo:</label>
-      <select id="periodo" class="form-select" bind:value={formData.periodo}>
+      <select
+        id="periodo"
+        class="form-select"
+        bind:value={formData.periodo}
+        on:change={changePeriodo}
+      >
         <option value="" />
         {#each _periodos as periodo}
           <option value={periodo.nombre}>{periodo.nombre}</option>
