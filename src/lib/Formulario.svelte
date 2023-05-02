@@ -7,7 +7,8 @@
   let _grados: grados = [];
   let _estudiantes: estudiantes = [];
   let _periodos: periodos = [];
-  let _asignaturas:asignaturas=[];
+  let _asignaturas: asignaturas = [];
+  let _notas: notas = [];
 
   onMount(async (): Promise<void> => {
     sedes = await getAsignaciones();
@@ -19,6 +20,7 @@
   type estudiantes = objetoEstudiantes[];
   type periodos = objetoPeriodos[];
   type asignaturas = objetoAsignaturas[];
+  type notas = objetoNotas[];
 
   interface objetoAsignaciones {
     ind: string;
@@ -33,6 +35,8 @@
   interface objetoEstudiantes {
     estudiante: string;
     nombres: string;
+    nivel: number;
+    numero: number;
   }
 
   interface objetoPeriodos {
@@ -87,9 +91,14 @@
   }
 
   interface objetoAsignaturas {
-      docente:string,
-      asignatura:string,
-      nombres:string
+    docente: string;
+    asignatura: string;
+    nombres: string;
+  }
+
+  interface objetoNotas {
+    asignatura: string;
+    valoracion: number;
   }
 
   const formData: FormData = {
@@ -138,25 +147,70 @@
     _estudiantes = await getEstudiantes();
   };
 
-
-  const getAsignaturas = async():Promise<asignaturas>=>{
-
-    const _asignaturas:asignaturas=data.map((item: objetoEstudiantes) => {
+  const getAsignaturas = async (): Promise<asignaturas> => {
+    const { nivel, numero } =
+      _grados[
+        _grados.findIndex((g: objetoGrados) => g.grado === formData.grado)
+      ];
+    const { data } = await axios.post(`${$_URL}getNotasSubir.php`, {
+      sede: formData.sede,
+      nivel,
+      numero,
+    });
+    console.log({ data });
+    const _asignaturas: asignaturas = data.map((item: objetoAsignaturas) => {
       return {
-        estudiante: item.estudiante,
+        docente: item.docente,
+        asignatura: item.asignatura,
         nombres: item.nombres,
-      };;
+      };
+    });
     return _asignaturas;
-
-  }
-  const changePeriodo = async (): Promise<void> => {
-    const {data}:any = await axios.post(`${$_URL}getNotasSubir.php`,{
-      sede:formData.sede,
-      grado:formData.grado,
-      periodo:formData.periodo
-    })
-    console.log({data});
   };
+
+ 
+
+  const getNotas = async (): Promise<notas> => {
+    const {data} = await axios.post(`${$_URL}getNotasIndividual.php`, 
+       JSON.stringify({
+        estudiante: formData.estudiante,
+        asignaturas: `${_asignaturas
+          .map((a: objetoAsignaturas) => `'${a.asignatura}'`)
+          .join(",")}`,
+        periodo: formData.periodo,
+        }));
+    
+    console.log({ data });
+    const _notas = data.map((item: objetoNotas) => {
+      return {
+        asignatura: item.asignatura,
+        valoracion: item.valoracion,
+      };
+    });
+    return _notas;
+  };
+
+  const changePeriodo = async (): Promise<void> => {
+    _asignaturas=[];
+    _notas=[];
+    _asignaturas = await getAsignaturas();
+    _notas = await getNotas();
+    console.log({ _notas });
+  };
+
+  const setNotas=(node):void=>{
+   node.querySelectorAll("input").forEach((el:HTMLInputElement)=>{
+      let asignatura=el.dataset.asignatura;
+      let index=_notas.findIndex((n:objetoNotas)=>n.asignatura===asignatura)
+      console.log({index});
+      if (index!==-1)
+      el.value=(_notas[index].valoracion).toString();
+   });
+  }
+
+  let NotasVal;
+
+  $:if(_notas.length>0) setNotas(NotasVal);
 </script>
 
 <main class="container">
@@ -196,10 +250,14 @@
         id="estudiante"
         class="form-select"
         bind:value={formData.estudiante}
+        on:change={changeEstudiante}
       >
         <option value="" />
         {#each _estudiantes as estudiante}
-          <option value={estudiante.estudiante}>{estudiante.nombres}</option>
+          <option
+            data-estudiante={JSON.stringify(estudiante)}
+            value={estudiante.estudiante}>{estudiante.nombres}</option
+          >
         {/each}
       </select>
     </div>
@@ -223,4 +281,44 @@
       <button type="submit" class="btn btn-primary">Enviar</button>
     </div>
   </form>
+  {#if _asignaturas.length>0}
+  <article class="a-grid" bind:this={NotasVal}>
+    {#each _asignaturas as { docente, asignatura, nombres }, index}
+      <section class="position-relative m-2" class:colorCol={index % 2 === 0}>
+        {asignatura}
+        <span
+          class="position-absolute top-0 start-100 translate-middle badge text-bg-info rounded-pill"
+        >
+          <a
+            href="#!"
+            class="text-decoration-none"
+            title="{asignatura} {docente} -> {nombres}"
+            ><i class="fa-solid fa-info" /></a
+          >
+          <span class="visually-hidden">unread messages</span>
+        </span>
+      </section>
+      <aside class="m-2">
+        <input type="text" class="form-control" data-asignatura="{asignatura}" title="{asignatura}"/>
+      </aside>
+    {/each}
+  </article>
+  {/if}
 </main>
+
+<style>
+  .a-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    grid-template-rows: auto;
+    row-gap: 2px;
+    column-gap: 15px;
+  }
+  .a-grid > section {
+    border-bottom: 1px solid black;
+  }
+  .colorCol {
+    color: indigo;
+    font-weight: bold;
+  }
+</style>
