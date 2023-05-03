@@ -12,13 +12,17 @@
 
   export type asignaturas = objetoAsignaturas[];
   export type notas = objetoNotas[];
+
+  export function delay(ms:number) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
 </script>
 
 <script lang="ts">
   import { onMount } from "svelte";
   import { _URL } from "./../Stores.js";
   import axios from "axios";
-  import GridNotas from "./GridNotas.svelte";
+  import GridNotas, { setValoracion } from "./GridNotas.svelte";
   import Swal from "sweetalert2";
   import MiniSpinner from "./MiniSpinner.svelte";
   import BotonFlotante from "./BotonFlotante.svelte";
@@ -216,7 +220,18 @@
 
   const changeEstudiante = async (): Promise<void> => {};
 
-  let NotasVal;
+  
+  const guardarTodo = async (): Promise<void> => {
+    const buttons: any = document.querySelectorAll(".guardarTodo");
+    console.log({ buttons });
+    buttons.forEach((button: HTMLButtonElement) => {
+     setValoracion(button)
+    });
+    Swal.fire({
+      title: "Guardando...",
+      text: "Guardando la Valoración",
+    });
+  };
 </script>
 
 <main class="container">
@@ -313,10 +328,5 @@
 
 <BotonFlotante
   show={_asignaturas.length > 0 && _notas.length > 0}
-  on:guardar={() => {
-    Swal.fire({
-      title: "Guardando...",
-      text: "Guardando la Valoración",
-    });
-  }}
+  on:guardar={guardarTodo}
 />
