@@ -26,7 +26,12 @@
   };
 
   export const setValoracion = async (e): Promise<void> => {
-    let button = e.target.closest("button");
+    let button;
+    if (e.pointerType){
+    console.log(e);
+    button = e.target.closest("button");
+    }
+    else button=e;
     let icon: HTMLElement = button.children[0].closest(".fa-solid");
     let spinner: HTMLDivElement = button.children[1].closest(".spinner-border");
     console.log(spinner);
@@ -39,6 +44,7 @@
     data = { ...data, valoracion };
     console.log(data);
     if (await guardarValoracion(data))
+    if (e.pointerType)
       Swal.fire({
         title: "Valoraciones",
         text: "Nota guardada con éxito",
@@ -59,7 +65,6 @@
     delay,
   } from "./Formulario.svelte";
   import Swal from "sweetalert2";
-  import MiniSpinner from "./MiniSpinner.svelte";
 
   export let _asignaturas: asignaturas = [];
   export let _notas: notas = [];

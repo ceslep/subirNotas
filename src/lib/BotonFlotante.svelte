@@ -20,8 +20,8 @@
 <style>
   .floating-button {
     position: fixed;
-    bottom: 20px;
-    right: 20px;
+    bottom: 15px;
+    right: 15px;
     background-color: #ff5733;
     border-radius: 50%;
     width: 60px;
