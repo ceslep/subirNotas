@@ -13,7 +13,7 @@
   export type asignaturas = objetoAsignaturas[];
   export type notas = objetoNotas[];
 
-  export function delay(ms:number) {
+  export function delay(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 </script>
@@ -33,7 +33,7 @@
   let _periodos: periodos = [];
   let _asignaturas: asignaturas = [];
   let _notas: notas = [];
-  let _docentes:docentes=[];
+  let _docentes: docentes = [];
 
   onMount(async (): Promise<void> => {
     sedes = await getAsignaciones();
@@ -68,8 +68,8 @@
   }
 
   interface objetoDocentes {
-    identificacion:string;
-    nombres:string;
+    identificacion: string;
+    nombres: string;
   }
 
   const getPeriodos = async (): Promise<periodos> => {
@@ -126,6 +126,8 @@
     periodo: string;
     valoracion: string;
     year: string;
+    nivel: number;
+    numero: number;
   }
 
   const formData: FormData = {
@@ -137,6 +139,8 @@
     periodo: "",
     valoracion: "",
     year: new Date().getFullYear().toString(), // Valor por defecto del campo "year" es el año actual
+    nivel: -1,
+    numero: 0,
   };
 
   function handleSubmit() {
@@ -144,12 +148,13 @@
   }
 
   const changeSede = async (): Promise<void> => {
-    _asignaturas=[];
-    _notas=[];
-    _docentes=[];
-    _grados=[];
-    _estudiantes=[];
-    formData.periodo="";
+    _asignaturas = [];
+    _notas = [];
+    _docentes = [];
+    _grados = [];
+    _estudiantes = [];
+    formData.periodo = "";
+    formData.grado="";
     _grados = await getGrados();
   };
 
@@ -175,7 +180,6 @@
     return _estudiantes;
   };
 
-
   const getDocentes = async (): Promise<docentes> => {
     const { nivel, numero } =
       _grados[
@@ -196,12 +200,17 @@
     return _docentes;
   };
 
-  const changeGrado = async (): Promise<void> => {
+  const changeGrado = async (e): Promise<void> => {
+    const arr = [...e.target.options];
+    const index = arr.findIndex((a) => a.value === e.target.value);
+    let { nivel, numero } = JSON.parse(arr[index].dataset.grado);
+    formData.nivel = parseInt(nivel);
+    formData.numero = parseInt(numero);
     _estudiantes = [];
-    _asignaturas=[];
-    _notas=[];
-    _docentes=[];
-    formData.periodo="";
+    _asignaturas = [];
+    _notas = [];
+    _docentes = [];
+    formData.periodo = "";
     _estudiantes = await getEstudiantes();
     _docentes = await getDocentes();
   };
@@ -215,7 +224,7 @@
       sede: formData.sede,
       nivel,
       numero,
-      docente:formData.docente
+      docente: formData.docente,
     });
     console.log({ data });
     const _asignaturas: asignaturas = data.map((item: objetoAsignaturas) => {
@@ -229,8 +238,13 @@
   };
 
   const getNotas = async (): Promise<notas> => {
-   if (parseInt(formData.grado[0])<=5 && formData.periodo==="") return [];
-   if (parseInt(formData.grado[0])<=5 && formData.periodo!=="" && formData.docente==="") return [];
+    if (formData.nivel!==-1 && formData.nivel <= 5 && formData.periodo === "") return [];
+    if (
+      formData.nivel!==-1 && formData.nivel <= 5 &&
+      formData.periodo !== "" &&
+      formData.docente === ""
+    )
+      return [];
     const { data } = await axios.post(
       `${$_URL}getNotasIndividual.php`,
       JSON.stringify({
@@ -240,7 +254,6 @@
           .join(",")}`,
         periodo: formData.periodo,
       })
-      
     );
 
     console.log({ data });
@@ -250,13 +263,13 @@
         valoracion: item.valoracion,
       };
     });
-    if (_notas.length===0){
-      _notas=_asignaturas.map((a:objetoAsignaturas)=>{
+    if (_notas.length === 0) {
+      _notas = _asignaturas.map((a: objetoAsignaturas) => {
         return {
           asignatura: a.asignatura,
-          valoracion:""
-        }
-      })
+          valoracion: "",
+        };
+      });
     }
     return _notas;
   };
@@ -270,21 +283,20 @@
   };
 
   const changeEstudiante = async (): Promise<void> => {
+    if (formData.periodo!=="")
     await changePeriodo();
   };
 
   const changeDocente = async (): Promise<void> => {
     await changePeriodo();
   };
-  
 
-  
   const guardarTodo = async (): Promise<void> => {
     const buttons: any = document.querySelectorAll(".guardarTodo");
     console.log({ buttons });
     buttons.forEach(async (button: HTMLButtonElement) => {
       await delay(1500);
-      await setValoracion(button)
+      await setValoracion(button);
     });
     await Swal.fire({
       title: "Guardando...",
@@ -292,7 +304,7 @@
     });
   };
 
-  $:console.log(formData.grado[0])
+  $: console.log(_estudiantes.length === 0 && formData.grado !== "");
 </script>
 
 <main class="container">
@@ -327,9 +339,11 @@
           bind:value={formData.grado}
           on:change={changeGrado}
         >
-          <option value="" />
+          <option value="-1" />
           {#each _grados as grado}
-            <option value={grado.grado}>{grado.grado}</option>
+            <option data-grado={JSON.stringify(grado)} value={grado.grado}
+              >{grado.grado}</option
+            >
           {/each}
         </select>
       </div>
@@ -369,21 +383,21 @@
           {/each}
         </select>
       </div>
-      {#if parseInt(formData.grado[0])<=5}
-      <div class="col-md-6">
-        <label for="docente" class="form-label">Docente:</label>
-        <select
-          id="docente"
-          class="form-select"
-          bind:value={formData.docente}
-          on:change={changeDocente}
-        >
-          <option value="" />
-          {#each _docentes as docente}
-            <option value={docente.identificacion}>{docente.nombres}</option>
-          {/each}
-        </select>
-      </div>
+      {#if formData.nivel!==-1 && formData.nivel <= 5}
+        <div class="col-md-6">
+          <label for="docente" class="form-label">Docente:</label>
+          <select
+            id="docente"
+            class="form-select"
+            bind:value={formData.docente}
+            on:change={changeDocente}
+          >
+            <option value="" />
+            {#each _docentes as docente}
+              <option value={docente.identificacion}>{docente.nombres}</option>
+            {/each}
+          </select>
+        </div>
       {/if}
     </form>
   </nav>
