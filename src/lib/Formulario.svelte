@@ -201,11 +201,8 @@
   };
 
   const changeGrado = async (e): Promise<void> => {
-    console.log(e)
     const arr = [...e.target.options];
-    console.log(arr)
     const index = arr.findIndex((a) => a.value === e.target.value);
-    console.log({index})
     let { nivel, numero } = JSON.parse(arr[index].dataset.grado);
     formData.nivel = parseInt(nivel);
     formData.numero = parseInt(numero);
@@ -259,7 +256,6 @@
       })
     );
 
-    console.log({ data });
     let _notas = data.map((item: objetoNotas) => {
       return {
         asignatura: item.asignatura,
@@ -282,7 +278,6 @@
     _notas = [];
     _asignaturas = await getAsignaturas();
     _notas = await getNotas();
-    console.log({ _notas });
   };
 
   const changeEstudiante = async (): Promise<void> => {
@@ -296,7 +291,6 @@
 
   const guardarTodo = async (): Promise<void> => {
     const buttons: any = document.querySelectorAll(".guardarTodo");
-    console.log({ buttons });
     buttons.forEach(async (button: HTMLButtonElement) => {
       await delay(1500);
       await setValoracion(button);
@@ -307,15 +301,10 @@
     });
   };
 
-  $:console.log(formData.sede)
-
-  $: console.log(_grados.length === 0 && formData.sede !== "");
-
  
 
 // Interceptor para las peticiones
 axios.interceptors.request.use((config) => {
-  console.log(config)
   console.log(`Enviando ${config.data ? config.data.length : 0} bytes a ${config.url}`);
   return config;
 });
