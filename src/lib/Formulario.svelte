@@ -26,7 +26,7 @@
   import Swal from "sweetalert2";
   import MiniSpinner from "./MiniSpinner.svelte";
   import BotonFlotante from "./BotonFlotante.svelte";
-
+  
   let sedes: asignaciones = [];
   let _grados: grados = [];
   let _estudiantes: estudiantes = [];
@@ -201,8 +201,11 @@
   };
 
   const changeGrado = async (e): Promise<void> => {
+    console.log(e)
     const arr = [...e.target.options];
+    console.log(arr)
     const index = arr.findIndex((a) => a.value === e.target.value);
+    console.log({index})
     let { nivel, numero } = JSON.parse(arr[index].dataset.grado);
     formData.nivel = parseInt(nivel);
     formData.numero = parseInt(numero);
@@ -304,7 +307,25 @@
     });
   };
 
-  $: console.log(_estudiantes.length === 0 && formData.grado !== "");
+  $:console.log(formData.sede)
+
+  $: console.log(_grados.length === 0 && formData.sede !== "");
+
+ 
+
+// Interceptor para las peticiones
+axios.interceptors.request.use((config) => {
+  console.log(config)
+  console.log(`Enviando ${config.data ? config.data.length : 0} bytes a ${config.url}`);
+  return config;
+});
+
+// Interceptor para las respuestas
+axios.interceptors.response.use((response) => {
+  console.log(`Recibiendo ${JSON.stringify(response.data).length} bytes desde ${response.config.url}`);
+  return response;
+});
+
 </script>
 
 <main class="container">

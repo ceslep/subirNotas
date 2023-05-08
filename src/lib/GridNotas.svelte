@@ -10,10 +10,10 @@
   }
 
   let valUrl;
-  _URL.subscribe(v=>{
-      valUrl=v;
-      console.log({v})
-  })
+  _URL.subscribe((v) => {
+    valUrl = v;
+    console.log({ v });
+  });
 
   export const guardarValoracion = async (
     datos: Valoracion
@@ -27,11 +27,10 @@
 
   export const setValoracion = async (e): Promise<void> => {
     let button;
-    if (e.pointerType){
-    console.log(e);
-    button = e.target.closest("button");
-    }
-    else button=e;
+    if (e.pointerType) {
+      console.log(e);
+      button = e.target.closest("button");
+    } else button = e;
     let icon: HTMLElement = button.children[0].closest(".fa-solid");
     let spinner: HTMLDivElement = button.children[1].closest(".spinner-border");
     console.log(spinner);
@@ -44,13 +43,13 @@
     data = { ...data, valoracion };
     console.log(data);
     if (await guardarValoracion(data))
-    if (e.pointerType)
-      Swal.fire({
-        title: "Valoraciones",
-        text: "Nota guardada con éxito",
-        icon: "success",
-        confirmButtonText: "OK",
-      });
+      if (e.pointerType)
+        Swal.fire({
+          title: "Valoraciones",
+          text: "Nota guardada con éxito",
+          icon: "success",
+          confirmButtonText: "OK",
+        });
     spinner.classList.toggle("d-none");
     icon.classList.toggle("d-none");
   };
@@ -91,6 +90,30 @@
   };
 
   $: if (_notas.length > 0) setNotas(NotasVal);
+
+  const focusIn = (e: FocusEvent): void => {
+    const { target } = e;
+    (target as HTMLInputElement).style.backgroundColor="aquamarine";
+    const espan: HTMLSpanElement = (target as HTMLElement)
+      .nextElementSibling as HTMLSpanElement;
+    const espanp: HTMLSpanElement = (target as HTMLElement).parentElement
+      .nextElementSibling as HTMLSpanElement;
+    const button: HTMLButtonElement = espanp.children[0] as HTMLButtonElement;
+    const data:any = button.dataset;
+    const { asignatura, nombredocente } = data;
+    espan.textContent = `${asignatura} : ${nombredocente}`;
+  };
+
+  const focusOut = (e: FocusEvent) => {
+    const { target } = e;
+    (target as HTMLInputElement).style.backgroundColor="white";
+    const espan: HTMLSpanElement = (target as HTMLElement)
+      .nextElementSibling as HTMLSpanElement;
+      espan.textContent="";
+  };
+
+  
+
 </script>
 
 <main class="mt-5">
@@ -121,7 +144,10 @@
             class="form-control"
             data-asignatura={asignatura}
             title={asignatura}
+            on:focus={focusIn}
+            on:blur={focusOut}
           />
+          <span class="fs-7 text-succes" />
         </aside>
         <span class="mx-auto">
           <button
@@ -132,6 +158,7 @@
             data-periodo={periodo}
             data-grado={grado}
             data-docente={docente}
+            data-nombredocente={nombres}
             on:click={setValoracion}
             ><i class="fa-solid fa-cloud-arrow-up" />
             <div class="spinner-border spinner-border-sm d-none" role="status">
@@ -164,4 +191,10 @@
     color: darkcyan;
     font-weight: bold;
   }
+
+  .fs-7{
+    font-size: 0.5rem;
+  }
+
+  
 </style>
