@@ -1,1 +1,32 @@
 @import "~bootstrap/scss/bootstrap";
+
+.floating-button-observar {
+  position: fixed;
+  bottom: 15px;
+  right: 90px;
+  background-color: #28a745; /* A professional green for 'view' action */
+  border-radius: 50%;
+  width: 60px; /* Equal width and height for a perfect circle */
+  height: 60px;
+  text-align: center;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Enhanced shadow */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease; /* Smooth transition for hover effects */
+}
+
+.floating-button-observar:hover {
+  background-color: #218838; /* Darker green on hover */
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* More pronounced shadow on hover */
+  transform: translateY(-2px); /* Slight lift effect */
+}
+
+.floating-button-observar a {
+  display: flex;
+  align-items: center;
+  color: #fff;
+  font-size: 28px; /* Larger icon for better visibility */
+  text-decoration: none;
+}

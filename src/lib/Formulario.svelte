@@ -26,6 +26,7 @@
   import Swal from "sweetalert2";
   import MiniSpinner from "./MiniSpinner.svelte";
   import BotonFlotante from "./BotonFlotante.svelte";
+  import NotasViewer from "./NotasViewer.svelte";
   
   let sedes: asignaciones = [];
   let _grados: grados = [];
@@ -34,6 +35,10 @@
   let _asignaturas: asignaturas = [];
   let _notas: notas = [];
   let _docentes: docentes = [];
+
+  let showNotasViewer: boolean = false;
+  let showNotasViewerSpinner: boolean = false;
+  let fetchedNotes: any[] = [];
 
   onMount(async (): Promise<void> => {
     sedes = await getAsignaciones();
@@ -290,18 +295,52 @@
   };
 
   const guardarTodo = async (): Promise<void> => {
-    const buttons: any = document.querySelectorAll(".guardarTodo");
-    buttons.forEach(async (button: HTMLButtonElement) => {
-      await delay(1500);
-      await setValoracion(button);
-    });
+    // const buttons: any = document.querySelectorAll(".guardarTodo");
+    // buttons.forEach(async (button: HTMLButtonElement) => {
+    //   await delay(1500);
+    //   await setValoracion(button);
+    // });
+    // await Swal.fire({
+    //   title: "Guardando...",
+    //   text: "Guardando las Valoraciones",
+    // });
     await Swal.fire({
-      title: "Guardando...",
-      text: "Guardando las Valoraciones",
+      icon: 'info',
+      title: 'Función Deshabilitada',
+      text: 'Esta funcionalidad aún no ha sido implementada.',
+      confirmButtonText: 'Entendido'
     });
   };
 
- 
+  const observarNotas = async (): Promise<void> => {
+    try {
+      showNotasViewerSpinner = true;
+      const { data } = await axios.post(`${$_URL}getNotasFull2.php`, {
+        asignacion: formData.sede,
+        grado: formData.grado,
+        periodo: formData.periodo,
+        year: formData.year,
+      });
+      fetchedNotes = data;
+      showNotasViewer = true;
+      showNotasViewerSpinner = false;
+    } catch (error) {
+      console.error("Error al cargar notas completas:", error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Hubo un error al cargar las notas completas.',
+        confirmButtonText: 'Entendido'
+      });
+    }
+  };
+
+  $: showObservarNotasButton = (
+    formData.sede !== "" &&
+    formData.grado !== "" &&
+    formData.estudiante !== "" &&
+    formData.periodo !== ""
+  );
 
 // Interceptor para las peticiones
 axios.interceptors.request.use((config) => {
@@ -317,117 +356,145 @@ axios.interceptors.response.use((response) => {
 
 </script>
 
-<main class="container">
-  <nav class="sticky-top bg-body-tertiary bg-light">
-    <form class="row g-3" on:submit|preventDefault={handleSubmit}>
-      <input type="hidden" name="currentYear" value={formData.year} />
-      <!-- Campo oculto con el año actual -->
-      <div class="col-md-6">
-        <label for="sede" class="form-label"
-          >Sede:<MiniSpinner show={sedes.length === 0} /></label
-        >
-        <select
-          id="sede"
-          class="form-select"
-          bind:value={formData.sede}
-          on:change={changeSede}
-        >
-          {#each sedes as sede}
-            <option value={sede.ind}>{sede.sede}</option>
-          {/each}
-        </select>
-      </div>
-      <div class="col-md-6">
-        <label for="grado" class="form-label"
-          >Grado:<MiniSpinner
-            show={_grados.length === 0 && formData.sede !== ""}
-          /></label
-        >
-        <select
-          id="grado"
-          class="form-select"
-          bind:value={formData.grado}
-          on:change={changeGrado}
-        >
-          <option value="-1" />
-          {#each _grados as grado}
-            <option data-grado={JSON.stringify(grado)} value={grado.grado}
-              >{grado.grado}</option
+<main class="container py-4">
+  <div class="card shadow-sm">
+    <div class="card-header bg-primary text-white">
+      <h4 class="mb-0">Gestión de Notas</h4>
+    </div>
+    <div class="card-body">
+      <nav class="sticky-top bg-body-tertiary bg-light p-3 mb-3 rounded">
+        <form class="row g-3" on:submit|preventDefault={handleSubmit}>
+          <input type="hidden" name="currentYear" value={formData.year} />
+          <!-- Campo oculto con el año actual -->
+          <div class="col-md-6">
+            <label for="sede" class="form-label"
+              >Sede:<MiniSpinner show={sedes.length === 0} /></label
             >
-          {/each}
-        </select>
-      </div>
-      <div class="col-md-6">
-        <label for="estudiante" class="form-label"
-          >Estudiante:<MiniSpinner
-            show={_estudiantes.length === 0 && formData.grado !== ""}
-          /></label
-        >
-        <select
-          id="estudiante"
-          class="form-select"
-          bind:value={formData.estudiante}
-          on:change={changeEstudiante}
-        >
-          <option value="" />
-          {#each _estudiantes as estudiante}
-            <option
-              data-estudiante={JSON.stringify(estudiante)}
-              value={estudiante.estudiante}>{estudiante.nombres}</option
+            <select
+              id="sede"
+              class="form-select"
+              bind:value={formData.sede}
+              on:change={changeSede}
             >
-          {/each}
-        </select>
-      </div>
+              {#each sedes as sede}
+                <option value={sede.ind}>{sede.sede}</option>
+              {/each}
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label for="grado" class="form-label"
+              >Grado:<MiniSpinner
+                show={_grados.length === 0 && formData.sede !== ""}
+              /></label
+            >
+            <select
+              id="grado"
+              class="form-select"
+              bind:value={formData.grado}
+              on:change={changeGrado}
+            >
+              <option value="-1" />
+              {#each _grados as grado}
+                <option data-grado={JSON.stringify(grado)} value={grado.grado}
+                  >{grado.grado}</option
+                >
+              {/each}
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label for="estudiante" class="form-label"
+              >Estudiante:<MiniSpinner
+                show={_estudiantes.length === 0 && formData.grado !== ""}
+              /></label
+            >
+            <select
+              id="estudiante"
+              class="form-select"
+              bind:value={formData.estudiante}
+              on:change={changeEstudiante}
+            >
+              <option value="" />
+              {#each _estudiantes as estudiante}
+                <option
+                  data-estudiante={JSON.stringify(estudiante)}
+                  value={estudiante.estudiante}>{estudiante.nombres}</option
+                >
+              {/each}
+            </select>
+          </div>
 
-      <div class="col-md-6">
-        <label for="periodo" class="form-label">Periodo:</label>
-        <select
-          id="periodo"
-          class="form-select"
-          bind:value={formData.periodo}
-          on:change={changePeriodo}
-        >
-          <option value="" />
-          {#each _periodos as periodo}
-            <option value={periodo.nombre}>{periodo.nombre}</option>
-          {/each}
-        </select>
+          <div class="col-md-6">
+            <label for="periodo" class="form-label">Periodo:</label>
+            <select
+              id="periodo"
+              class="form-select"
+              bind:value={formData.periodo}
+              on:change={changePeriodo}
+            >
+              <option value="" />
+              {#each _periodos as periodo}
+                <option value={periodo.nombre}>{periodo.nombre}</option>
+              {/each}
+            </select>
+          </div>
+          {#if formData.nivel!==-1 && formData.nivel <= 5}
+            <div class="col-md-6">
+              <label for="docente" class="form-label">Docente:</label>
+              <select
+                id="docente"
+                class="form-select"
+                bind:value={formData.docente}
+                on:change={changeDocente}
+              >
+                <option value="" />
+                {#each _docentes as docente}
+                  <option value={docente.identificacion}>{docente.nombres}</option>
+                {/each}
+              </select>
+            </div>
+          {/if}
+        </form>
+      </nav>
+      <div class="mt-3">
+        <MiniSpinner
+          show={_asignaturas.length === 0 &&
+            _notas.length === 0 &&
+            formData.periodo !== ""}
+        />
       </div>
-      {#if formData.nivel!==-1 && formData.nivel <= 5}
-        <div class="col-md-6">
-          <label for="docente" class="form-label">Docente:</label>
-          <select
-            id="docente"
-            class="form-select"
-            bind:value={formData.docente}
-            on:change={changeDocente}
-          >
-            <option value="" />
-            {#each _docentes as docente}
-              <option value={docente.identificacion}>{docente.nombres}</option>
-            {/each}
-          </select>
-        </div>
-      {/if}
-    </form>
-  </nav>
-  <div class="mt-3">
-    <MiniSpinner
-      show={_asignaturas.length === 0 &&
-        _notas.length === 0 &&
-        formData.periodo !== ""}
-    />
+      <GridNotas
+        {_asignaturas}
+        {_notas}
+        estudiante={formData.estudiante}
+        periodo={formData.periodo}
+        grado={formData.grado}
+      />
+    </div>
   </div>
-  <GridNotas
-    {_asignaturas}
-    {_notas}
-    estudiante={formData.estudiante}
-    periodo={formData.periodo}
-    grado={formData.grado}
-  />
 </main>
 
 <BotonFlotante
   show={_asignaturas.length > 0 && _notas.length > 0}
   on:guardar={guardarTodo}
 />
+
+{#if showObservarNotasButton}
+  <div
+    class="floating-button-observar"
+    on:click={observarNotas}
+    on:keydown={() => {}}
+  >
+  {#if !showNotasViewerSpinner}
+     <a href="#!">
+      <i class="fa-solid fa-eye" />
+    </a>
+  {:else}
+    <MiniSpinner show={showNotasViewerSpinner} color="white"/>
+  {/if}
+    
+  </div>
+{/if}
+
+{#if showNotasViewer}
+  <NotasViewer notes={fetchedNotes} on:close={() => (showNotasViewer = false)} />
+{/if}
